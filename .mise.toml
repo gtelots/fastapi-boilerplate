@@ -1,0 +1,12 @@
+# https://mise.jdx.dev/mise-cookbook/python.html#mise-uv
+
+[env]
+PYTHON_VERSION = "{{ get_env(name='PYTHON_VERSION', default='3.12.3') }}"
+'_'.python.venv = { path = ".venv", create = true }
+
+[tools]
+python = "{{ get_env(name='PYTHON_VERSION', default='3.12.3') }}"
+uv = "{{ get_env(name='UV_VERSION', default='0.9.7') }}"
+
+[settings]
+python.uv_venv_auto = true
