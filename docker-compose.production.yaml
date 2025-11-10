@@ -1,0 +1,15 @@
+services:
+  app-prod:
+    image: ${REGISTRY_HOST}/${ORG_NAME}/${REPO_NAME}:${IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+      args:
+        - BASE_IMAGE=${BASE_IMAGE}
+        - TZ=${TZ}
+        - APP_PORT=${APP_PORT}
+      target: production
+    env_file:
+      - .env.production
+    ports:
+      - "${APP_FORWARD_PORT}:${APP_PORT}"

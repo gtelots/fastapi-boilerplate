@@ -1,0 +1,50 @@
+# Python cache and virtual environments
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Development and testing
+.minio/
+tests/
+*.log
+
+# Environment and secrets
+.env*
+.jkws.json
+ip-geolocation.mmdb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation and project files
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+Brewfile
+Taskfile.yml
+
+# Docker files (avoid recursion)
+Dockerfile*
+docker-compose*.yaml
+.dockerignore
+.docker/
+docker/
