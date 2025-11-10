@@ -1,0 +1,227 @@
+version: '3'
+
+env:
+  # Image
+  PYTHON_VERSION: "3.12.3"
+  REGISTRY_HOST: "gis-repo-registry.gtelots.dev"
+  ORG_NAME: "gtelmaps"
+  REPO_NAME: "fastapi-boilerplate"
+  IMAGE_TAG: "0.1.0"
+
+  # Environment
+  APP_SERVICE: "app-dev"
+  APP_ENV: "development"
+  APP_PORT: 8000
+
+dotenv: [
+  ".env",
+  ".env.{{.APP_ENV}}"
+]
+
+vars:
+  TAGGED_IMAGE_NAME: "{{.REGISTRY_HOST}}/{{.ORG_NAME}}/{{.REPO_NAME}}:{{.IMAGE_TAG}}"
+  LATEST_IMAGE_NAME: "{{.REGISTRY_HOST}}/{{.ORG_NAME}}/{{.REPO_NAME}}:latest"
+
+tasks:
+  env:setup:
+    desc: "Install mise and setup development environment"
+    cmds:
+      - echo "Install mise and setup development environment"
+      - mise install
+
+  env:info:
+    desc: "Print project information"
+    cmds:
+      - echo "Application environment -> {{.APP_ENV}}"
+      - echo "Python version -> $PYTHON_VERSION"
+      - echo "Virtual env -> $VIRTUAL_ENV"
+
+  env:clean:
+    desc: "Clean up Python cache files"
+    cmds:
+      - echo "Cleaning up Python cache files"
+      - find . -type f -name '*.pyc' -delete
+      - find . -type d -name '__pycache__' -delete
+      - find . -type d -name '.pytest_cache' -exec rm -rf {} +
+      - find . -type d -name '.mypy_cache' -exec rm -rf {} +
+      - find . -type d -name '.ruff_cache' -exec rm -rf {} +
+
+  install:dev:
+    desc: "Install development dependencies"
+    cmds:
+      - echo "Installing development dependencies"
+      - mise exec -- uv sync --all-groups
+
+  install:prod:
+    desc: "Install production dependencies"
+    cmds:
+      - echo "Installing production dependencies"
+      - mise exec -- uv sync --no-dev
+
+  db:migrate:
+    desc: "Run database migrations"
+    cmds:
+      - echo "Running database migrations"
+      - mise exec -- uv run python -m scripts.db upgrade
+
+  db:recreate:
+    desc: "Drop and recreate database"
+    cmds:
+      - echo "Recreating database"
+      - mise exec -- uv run python -m scripts.db recreate
+
+  db:reparent:
+    desc: "Try to auto-fix conflicting migrations"
+    cmds:
+      - echo "Reparenting database migrations"
+      - mise exec -- uv run python -m scripts.db reparent
+
+  db:revision:
+    desc: "Create a new migration revision"
+    cmds:
+      - echo "Creating new migration revision"
+      - mkdir -p migrations/versions
+      - mise exec -- uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"
+
+  api:dev:
+    desc: "Run FastAPI development server"
+    cmds:
+      - echo "Running FastAPI development server"
+      - mise exec -- uv run uvicorn app.app:app --host 0.0.0.0 --port {{.APP_PORT}} --reload
+
+  api:prod:
+    desc: "Run FastAPI production server"
+    cmds:
+      - echo "Running FastAPI production server"
+      - mise exec -- uv run uvicorn app.app:app --host 0.0.0.0 --port {{.APP_PORT}}
+
+  test:all:
+    desc: "Run all tests with coverage"
+    cmds:
+      - echo "Running all tests with coverage"
+      - mise exec -- uv run pytest --cov=app/ --cov-report=term-missing
+
+  test:fast:
+    desc: "Run tests in parallel without coverage"
+    cmds:
+      - echo "Running tests in parallel without coverage"
+      - mise exec -- uv run pytest -n auto -p no:sugar --no-cov
+
+  lint:fix:
+    desc: "Run linters with autofix"
+    cmds:
+      - echo "Running linters with autofix"
+      - mise exec -- uv run ruff format app scripts
+      - mise exec -- uv run ruff check --fix app scripts
+
+  lint:check:
+    desc: "Run linters without autofix"
+    cmds:
+      - echo "Running linters without autofix"
+      - mise exec -- uv run ruff format --check app scripts
+      - mise exec -- uv run ruff check app scripts
+
+  lint:types:
+    desc: "Run mypy type checking"
+    cmds:
+      - echo "Running mypy type checking"
+      - mise exec -- uv run mypy app scripts
+
+  docker:base:*:*:
+    vars:
+      CLI: '{{index .MATCH 0 | trim}}'
+      MODE: '{{index .MATCH 1 | trim}}'
+      ENV_FILE: |
+        {{- if eq .MODE "local" -}}
+        .env
+        {{- else -}}
+        .env.{{.MODE}}
+        {{- end -}}
+      COMPOSE_FILE: |
+        {{- if eq .MODE "local" -}}
+        docker-compose.yaml
+        {{- else -}}
+        docker-compose.{{.MODE}}.yaml
+        {{- end -}}
+      COMPOSE_OPTIONS: |
+         --file {{.COMPOSE_FILE}} --env-file {{.ENV_FILE}}
+    cmds:
+      - docker-compose {{.COMPOSE_OPTIONS | trim}} {{.CLI | trim}} {{.CLI_ARGS | trim}}
+
+  docker:build:*:
+    desc: "Build Docker image"
+    vars:
+      CLI: 'build'
+      MODE: '{{index .MATCH 0}}'
+    cmds:
+      - echo "Building Docker image"
+      - task: docker:base:{{.CLI}}:{{.MODE}}
+
+  docker:up:*:
+    desc: "Start Docker containers"
+    vars:
+      CLI: 'up'
+      MODE: '{{index .MATCH 0}}'
+      CLI_ARGS: '-d --remove-orphans'
+    cmds:
+      - echo "Starting Docker containers"
+      - task: docker:base:{{.CLI}}:{{.MODE}}
+
+  docker:down:*:
+    desc: "Stop Docker containers"
+    vars:
+      CLI: 'down'
+      MODE: '{{index .MATCH 0}}'
+    cmds:
+      - echo "Stopping Docker containers"
+      - task: docker:base:{{.CLI}}:{{.MODE}}
+
+  docker:restart:*:
+    desc: "Restart Docker containers"
+    vars:
+      CLI: 'restart'
+      MODE: '{{index .MATCH 0}}'
+    cmds:
+      - echo "Restarting Docker containers"
+      - task: docker:base:{{.CLI}}:{{.MODE}}
+
+  docker:shell:*:
+    desc: "Open shell in Docker container"
+    vars:
+      CLI: 'exec'
+      MODE: '{{index .MATCH 0}}'
+      CLI_ARGS: '{{.APP_SERVICE}} /bin/sh'
+    cmds:
+      - echo "Opening shell in Docker container"
+      - task: docker:base:{{.CLI}}:{{.MODE}}
+
+  docker:exec:*:
+    desc: "Execute command in Docker container"
+    vars:
+      CLI: 'exec'
+      MODE: '{{index .MATCH 0}}'
+    cmds:
+      - echo "Executing command in Docker container"
+      - task: docker:base:{{.CLI}}:{{.MODE}}
+
+  docker:logs:*:
+    desc: "View Docker container logs"
+    vars:
+      CLI: 'logs'
+      MODE: '{{index .MATCH 0}}'
+    cmds:
+      - echo "Viewing Docker container logs"
+      - task: docker:base:{{.CLI}}:{{.MODE}}
+
+  docker:push:tag:
+    desc: "Push Docker image to registry"
+    cmds:
+      - echo "Pushing Docker image to registry"
+      - docker push {{.TAGGED_IMAGE_NAME}}
+
+  docker:push:latest:
+    desc: "Push Docker image to registry as latest"
+    cmds:
+      - echo "Pushing Docker image to registry as latest"
+      - docker tag {{.TAGGED_IMAGE_NAME}} {{.LATEST_IMAGE_NAME}}
+      - docker push {{.LATEST_IMAGE_NAME}}
