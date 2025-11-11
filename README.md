@@ -47,4 +47,13 @@ A production-ready FastAPI boilerplate.
 
 This repo is really standing on the shoulders of giants. Thank you to all those who have contributed and thanks to these repos for code and ideas:
 
-- [polarsource/polar](https://github.com/polarsource/polar)
+## Boilerplates
+- [ ] [fastapi/full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template)
+- [ ] [javadzarezadeh/fastforge](https://github.com/javadzarezadeh/fastforge)
+
+## Projects
+- [x] [polarsource/polar](https://github.com/polarsource/polar)
+- [ ] [benavlabs/FastAPI-boilerplate](https://github.com/benavlabs/FastAPI-boilerplate)
+
+## Tips
+- [ ] [Structuring a FastAPI Project](https://dev.to/mohammad222pr/structuring-a-fastapi-project-best-practices-53l6)
