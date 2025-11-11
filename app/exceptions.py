@@ -41,12 +41,12 @@ class HttpError(Exception):
         if cls._schema is not None:
             return cls._schema
 
-        error_literal = Literal[cls.__name__]  # type: ignore
-
+        # Create schema matching the custom error format
         model = create_model(
-            cls.__name__,
-            error=(error_literal, Field(examples=[cls.__name__])),
-            detail=(str, ...),
+            f"{cls.__name__}Response",
+            status=(Literal["ERROR"], Field(default="ERROR", examples=["ERROR"])),
+            message=(str, Field(examples=["Resource not found"])),
+            licence=(str, Field(default="© GTEL Maps", examples=["© GTEL Maps"])),
         )
         cls._schema = model
         return cls._schema

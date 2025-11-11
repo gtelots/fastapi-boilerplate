@@ -9,10 +9,11 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from app.config import app_settings
+from app.logging import Logger
 from app.kit.schemas import Schema
 from app.items.models import Item
 
-log = structlog.get_logger(__name__)
+log: Logger = structlog.get_logger(__name__)
 
 
 class ItemAIValidationVerdict(Schema):

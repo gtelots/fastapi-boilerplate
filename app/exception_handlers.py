@@ -2,12 +2,14 @@
 
 from urllib.parse import urlencode
 
+import structlog
 from fastapi import FastAPI, Request
-from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from app.config import app_settings
+from app.logging import Logger
+from app.kit.validation_formatting import generate_validation_error
 from app.exceptions import (
     HttpError,
     HttpRedirectionError,
@@ -15,12 +17,19 @@ from app.exceptions import (
     ResourceNotModified,
 )
 
+log: Logger = structlog.get_logger(__name__)
+
 
 async def http_exception_handler(request: Request, exc: HttpError) -> JSONResponse:
-    print(type(exc).__name__)
+    log.error(f"Unhandled exception: {type(exc).__name__} - {str(exc)}", exc_info=True)
+    error_content = {
+        "status": "ERROR",
+        "message": exc.message,
+        "licence": "© GTEL Maps",
+    }
     return JSONResponse(
         status_code=exc.status_code,
-        content={"status": "ERROR", "message": exc.message, "licence": "© GTEL Maps"},
+        content=error_content,
         headers=exc.headers,
     )
 
@@ -28,10 +37,16 @@ async def http_exception_handler(request: Request, exc: HttpError) -> JSONRespon
 async def request_validation_exception_handler(
     request: Request, exc: RequestValidationError | HttpRequestValidationError
 ) -> JSONResponse:
-    print(type(exc).__name__)
+    log.error(f"Unhandled exception: {type(exc).__name__} - {str(exc)}", exc_info=True)
+    error_content = {
+        "status": "ERROR",
+        "message": "Validation Error",
+        "error": generate_validation_error(exc),
+        "licence": "© GTEL Maps",
+    }
     return JSONResponse(
         status_code=422,
-        content={"status": "ERROR", "message": jsonable_encoder(exc.errors()), "licence": "© GTEL Maps"},
+        content=error_content,
     )
 
 
