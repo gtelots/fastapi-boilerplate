@@ -42,3 +42,9 @@ A production-ready FastAPI boilerplate.
 - [ ] Monitoring (Sentry, Logfire)
 - [ ] AI (OpenAI, Pydantic-AI)
 - [ ] CI/CD (GitHub Actions, GitLab CI)
+
+# Thanks🤝
+
+This repo is really standing on the shoulders of giants. Thank you to all those who have contributed and thanks to these repos for code and ideas:
+
+- [polarsource/polar](https://github.com/polarsource/polar)
