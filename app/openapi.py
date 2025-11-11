@@ -107,7 +107,6 @@ def set_openapi_generator(app: FastAPI) -> None:
             routes=app.routes,
             webhooks=app.webhooks.routes,
             tags=app.openapi_tags,
-            servers=app.servers,
             separate_input_output_schemas=app.separate_input_output_schemas,
         )
 

@@ -76,6 +76,12 @@ class MetadataOutputMixin(BaseModel):
 
 
 def add_metadata_query_schema(openapi_schema: dict[str, Any]) -> dict[str, Any]:
+    # Ensure components and schemas exist
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
+    if "schemas" not in openapi_schema["components"]:
+        openapi_schema["components"]["schemas"] = {}
+
     openapi_schema["components"]["schemas"]["MetadataQuery"] = {
         "anyOf": [
             {
